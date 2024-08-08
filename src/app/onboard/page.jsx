@@ -1,138 +1,24 @@
-"use client";
-import CommonForm from "@/components/common-form";
-import {
-  candidateOnboardFormControls,
-  initialCandidateFormData,
-  initialRecruiterFormData,
-  recruiterOnboardFormControls,
-} from "@/utils";
-import { useUser } from "@clerk/nextjs";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@radix-ui/react-tabs";
-import React, { useEffect, useState } from "react";
+import { fetchProfileAction } from '@/actions';
+import Onboard from '@/components/on-board'
+import { currentUser } from '@clerk/nextjs/server';
+import { redirect } from 'next/navigation';
 
-const Onboard = () => {
-  const [currentTab, setCurrentTab] = useState("candidate");
-  const [recruiterFormData, setRecruiterFormData] = useState(
-    initialRecruiterFormData
-  );
-  const [candidateFormData, setCandidateFormData] = useState(
-    initialCandidateFormData
-  );
-  const [file, setFile] = useState(null);
+const OnBoardPage = async () => {
+  const user = await currentUser();
+  // fetch profile info
+  const profileInfo = await fetchProfileAction(user?.id);
 
-  const currentAuthUser = useUser();
-  const { user } = currentAuthUser;
-
-  function handleFileChange(event) {
-    event.preventDefault();
-    setFile(event.target.files[0]);
-  }
-
-  async function handleUploadPdfToSupabase() {
-    const { data, error } = await supabaseClient.storage
-      .from("job-board-public")
-      .upload(`/public/${file.name}`, file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
-    console.log(data, error);
-    if (data) {
-      setCandidateFormData({
-        ...candidateFormData,
-        resume: data.path,
-      });
-    }
-  }
-
-  console.log(candidateFormData);
-
-  useEffect(() => {
-    if (file) handleUploadPdfToSupabase();
-  }, [file]);
-
-  function handleTabChange(value) {
-    setCurrentTab(value);
-  }
-
-  function handleRecuiterFormValid() {
-    return (
-      recruiterFormData &&
-      recruiterFormData.name.trim() !== "" &&
-      recruiterFormData.companyName.trim() !== "" &&
-      recruiterFormData.companyRole.trim() !== ""
-    );
-  }
-
-  function handleCandidateFormValid() {
-    return Object.keys(candidateFormData).every(
-      (key) => candidateFormData[key].trim() !== ""
-    );
-  }
-
-  async function createProfile() {
-    const data =
-      currentTab === "candidate"
-        ? {
-            candidateInfo: candidateFormData,
-            role: "candidate",
-            isPremiumUser: false,
-            userId: user?.id,
-            email: user?.primaryEmailAddress?.emailAddress,
-          }
-        : {
-            recruiterInfo: recruiterFormData,
-            role: "recruiter",
-            isPremiumUser: false,
-            userId: user?.id,
-            email: user?.primaryEmailAddress?.emailAddress,
-          };
-
-    await createProfileAction(data, "/onboard");
-  }
-
-  console.log(candidateFormData);
-
+  if (profileInfo?._id) {
+    if (profileInfo?.role === "recruiter" && !profileInfo.isPremiumUser) 
+      redirect("/membership");
+    else 
+      redirect("/")
+  } else
   return (
     <>
-      <div className="bg-white">
-        <Tabs>
-          <div className="w-full">
-            <div className="flex items-baseline justify-between border-b pb-6 pt-24">
-              <h1 className=" text-4xl font-bold tracking-tight text-gray-900 ">
-                Welcome to OnBoarding
-              </h1>
-              <TabsList>
-                <TabsTrigger value="candidate">Candidate</TabsTrigger>
-                <TabsTrigger value="recruiter">Recruiter</TabsTrigger>
-              </TabsList>
-            </div>
-          </div>
-          <TabsContent value="candidate">
-            <CommonForm
-              // action={createProfile}
-              formData={candidateFormData}
-              setFormData={setCandidateFormData}
-              buttonText={"Onboard as Candidate"}
-              formControls={candidateOnboardFormControls}
-              handleFileChange={handleFileChange}
-              isBtnDisabled={!handleCandidateFormValid()}
-            />
-          </TabsContent>
-          <TabsContent value="recruiter">
-            <CommonForm
-              action={createProfile}
-              formData={recruiterFormData}
-              setFormData={setRecruiterFormData}
-              buttonText={"Onboard as Recruiter"}
-              formControls={recruiterOnboardFormControls}
-              handleFileChange={handleFileChange}
-              isBtnDisabled={!handleRecuiterFormValid()}
-            />
-          </TabsContent>
-        </Tabs>
-      </div>
+      <Onboard/>
     </>
-  );
-};
+  )
+}
 
-export default Onboard;
+export default OnBoardPage

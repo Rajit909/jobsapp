@@ -18,10 +18,11 @@ export default function RootLayout({ children }) {
       <body className={inter.className}>
         <Suspense fallback="{<Loading />}">
         <Commonlayout
-            // attribute="class"
-            // defaultTheme="system"
-            children={children}
-        />
+            attribute="class"
+            defaultTheme="system"
+        >
+          {children}
+        </Commonlayout>
         </Suspense>
         </body>
     </html>

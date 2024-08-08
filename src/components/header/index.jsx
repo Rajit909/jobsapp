@@ -33,13 +33,13 @@ const Header = ({ user, profileInfo }) => {
     {
       label: "Activity",
       path: "/activity",
-      show: user,
+      show: profileInfo?.role === "candidate",
     },
-    // {
-    //   label: "Companies",
-    //   path: "/companies",
-    //   show: profileInfo?.role === "candidate",
-    // },
+    {
+      label: "Companies",
+      path: "/companies",
+      show: profileInfo?.role === "candidate",
+    },
     {
       label: "Jobs",
       path: "/jobs",
@@ -74,10 +74,11 @@ const Header = ({ user, profileInfo }) => {
               <h3>Jobs Search</h3>
             </Link>
             <div className="grid gap-2 py-6">
-              {menuItems.map((menuItem) =>
+              {menuItems.map((menuItem, index) =>
                 menuItem.show ? (
                   <Link
                     href={menuItem.path}
+                    key={index}
                     className="flex w-full items-center py-2 text-lg font-semibold"
                   >
                     {menuItem.label}
@@ -96,10 +97,11 @@ const Header = ({ user, profileInfo }) => {
         </Sheet>
         
         <nav className="ml-auto hidden lg:flex gap-6 items-center">
-          {menuItems.map((menuItem) =>
+          {menuItems.map((menuItem, index) =>
             menuItem.show ? (
               <Link
                 href={menuItem.path}
+                key={index}
                 onClick={() => sessionStorage.removeItem("filterParams")}
                 className="group inline-flex h-9 w-max items-center rounded-md  px-4 py-2 text-sm font-medium"
               >
